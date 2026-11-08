@@ -1,4 +1,4 @@
-# Maramau - Marauder for Freemove S3 Display CYD (CBC)
+# Maramau - Marauder for Freemove S3
 
 `Maramau` is a port of the [ESP32Marauder](https://github.com/justcallmekoko/ESP32Marauder) firmware to the **Freenove / Freemove ESP32-S3 Display (FNK01044B / FNK0104B, 2.8" variant, CYD-style form factor)**.
 
