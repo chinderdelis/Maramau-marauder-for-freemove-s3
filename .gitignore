@@ -1,0 +1,23 @@
+.pio/
+__pycache__/
+*.pyc
+.DS_Store
+.vscode/
+backups/
+*.log
+firmware.map
+fnk0104ab_tft_test.bin
+maramau_freemove_fnk01044b_2.8*.bin
+bootloader_fnk01044b_s3.bin
+partitions_fnk01044b_s3.bin
+esp32_marauder_freenove_fnk01044b_s3.bin
+esp32_marauder.ino.bootloader.bin
+esp32_marauder.ino.partitions.bin
+/bootloader.bin
+/partitions.bin
+esp32_marauder_freenove_fnk01044b_s3.bin
+
+# Upstream historical build artifacts
+esp32_marauder/PreviousVersions/
+*.bin
+!firmware/**/*.bin
