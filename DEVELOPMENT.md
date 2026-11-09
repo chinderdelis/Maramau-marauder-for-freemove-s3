@@ -87,8 +87,12 @@ app together, or flash the merged full image.
 - Battery percentage is a linear estimate from `BAT_ADC` (3.30–4.15 V); can be
   inaccurate under load. TP4054 `CHRG` is not mapped to an ESP32 GPIO, so no
   charging indicator.
-- PSRAM: 8 MB present on the module, but runtime init reported
-  "PSRAM not available" with the current build flags — under investigation.
+- PSRAM: the module is N16R8 (8 MB **Octal/OPI** PSRAM). The initial build used
+  `board_build.arduino.memory_type = qio_qspi`, which is for Quad PSRAM (R2
+  variants) and silently disables PSRAM -> "PSRAM not available".
+  Changed to `qio_opi` (+ `board_build.psram_type = opi`), which is the correct
+  setting for 8 MB Octal PSRAM. Build verified; **runtime PSRAM detection still
+  to be validated on hardware** (flash the merged image and check the boot log).
 - USB CDC serial (`/dev/ttyACM0`) was intermittent on the test setup; esptool
   flashing was reliable.
 
