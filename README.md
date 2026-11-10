@@ -51,8 +51,8 @@ python -m esptool --chip esp32s3 -p /dev/ttyACM0 -b 460800 write-flash 0x0 firmw
 - **SD card:** disabled in this beta. On the FNK01044B 2.8" test unit, SD initialization (`SD.begin`, `SD_CS=21`, shared SPI) blocked boot; SD init is therefore skipped for this target until the correct wiring/bus sharing is confirmed.
 - **GPS:** enabled in configuration (UART pins mapped in `configs.h`), but not validated on hardware without an attached GPS module.
 - **Battery:** percentage is derived from `BAT_ADC` (GPIO9, 2:1 divider, linear estimate 3.30–4.15 V). It is an estimate and can be inaccurate under load. Charging status (TP4054 `CHRG`) is not mapped to an ESP32 GPIO on this board, so a dedicated charging indicator is not available.
-- **PSRAM:** the board reports 8 MB PSRAM, but runtime initialization reported "PSRAM not available" with the current build flags; this needs investigation.
-- **USB CDC serial:** USB CDC (`/dev/ttyACM0`) was intermittent during development on the test setup; flashing via esptool was more reliable than persistent serial logging.
+- **PSRAM:** ✅ resolved. The module is an ESP32-S3 N16R8 with 8 MB **Octal (OPI)** PSRAM; it now initializes correctly (`psramInit()` succeeds, status bar shows `P:` usage). The build uses `board_build.arduino.memory_type = qio_opi`.
+- **USB CDC serial / flashing:** flashing over native USB CDC (`/dev/ttyACM0`) is reliable with `esptool.py --no-stub` at default baud (921600 triggers a native-USB stall). Persistent serial logging over CDC works after boot.
 
 ## Build and flash (from source)
 

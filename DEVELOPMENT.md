@@ -91,8 +91,10 @@ app together, or flash the merged full image.
   `board_build.arduino.memory_type = qio_qspi`, which is for Quad PSRAM (R2
   variants) and silently disables PSRAM -> "PSRAM not available".
   Changed to `qio_opi` (+ `board_build.psram_type = opi`), which is the correct
-  setting for 8 MB Octal PSRAM. Build verified; **runtime PSRAM detection still
-  to be validated on hardware** (flash the merged image and check the boot log).
+  setting for 8 MB Octal PSRAM. **Validated on hardware:** with this change the
+  boot log no longer prints "PSRAM not available" (`psramInit()` succeeds in
+  `esp32_marauder.ino`), so the 8 MB PSRAM is available and the status bar shows
+  `P:` usage.
 - USB CDC serial (`/dev/ttyACM0`) was intermittent on the test setup; esptool
   flashing was reliable.
 
