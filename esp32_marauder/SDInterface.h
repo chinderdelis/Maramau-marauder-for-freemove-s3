@@ -10,6 +10,7 @@
   #include "FS.h"
 #endif
 #include "SD.h"
+#include "SD_MMC.h"
 #include "SPIFFS.h"
 #ifdef HAS_C5_SD
   #include "SPI.h"

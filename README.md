@@ -43,12 +43,15 @@ Prebuilt binaries for **FNK01044B 2.8" (ESP32-S3)** are in [`firmware/fnk01044b_
 Flash the merged image (replace `/dev/ttyACM0` with your serial port):
 
 ```bash
-python -m esptool --chip esp32s3 -p /dev/ttyACM0 -b 460800 write-flash 0x0 firmware/fnk01044b_s3_2.8/maramau_fnk01044b_s3_2.8_FULL.bin
+python -m esptool --chip esp32s3 -p /dev/ttyACM0 --no-stub write_flash --flash_mode qio --flash_freq 80m --flash_size 16MB 0x0 firmware/fnk01044b_s3_2.8/maramau_fnk01044b_s3_2.8_FULL.bin
 ```
+
+> Flash with `--no-stub` at default baud. Native USB CDC stalls at high baud
+> rates (e.g. 921600); use the command above.
 
 ## Known limitations (FNK01044B 2.8" beta)
 
-- **SD card:** disabled in this beta. On the FNK01044B 2.8" test unit, SD initialization (`SD.begin`, `SD_CS=21`, shared SPI) blocked boot; SD init is therefore skipped for this target until the correct wiring/bus sharing is confirmed.
+- **SD card:** ✅ works. On the FNK01044B the card is wired to the **SDMMC** bus (`CLK=38, CMD=40, D0=39`, 1-bit), not SPI (`SD_CS=21` is unused). The firmware initializes it via `SD_MMC` and auto-creates `/SCRIPTS`. Verified on hardware: boot no longer prints "Failed to mount SD Card (SDMMC)" and `ls /` lists the card.
 - **GPS:** enabled in configuration (UART pins mapped in `configs.h`), but not validated on hardware without an attached GPS module.
 - **Battery:** percentage is derived from `BAT_ADC` (GPIO9, 2:1 divider, linear estimate 3.30–4.15 V). It is an estimate and can be inaccurate under load. Charging status (TP4054 `CHRG`) is not mapped to an ESP32 GPIO on this board, so a dedicated charging indicator is not available.
 - **PSRAM:** ✅ resolved. The module is an ESP32-S3 N16R8 with 8 MB **Octal (OPI)** PSRAM; it now initializes correctly (`psramInit()` succeeds, status bar shows `P:` usage). The build uses `board_build.arduino.memory_type = qio_opi`.
@@ -82,8 +85,6 @@ If the device boot-loops after flashing only the app, flash bootloader + partiti
 ## Roadmap / TODO
 
 - Create and validate ports for the **Freenove ESP32-S3 Display 3.5"** and **4.0"** variants.
-- Re-enable and validate **microSD** on FNK01044B (confirm CS/wiring and SPI bus sharing with TFT/touch).
-- Investigate **PSRAM** initialization.
 - Validate **GPS** behavior with an attached module and confirm UART pin mapping for this board.
 - Improve **battery** reporting (calibration/averaging); add charging indication if a usable signal is identified.
 - General refinement and testing of the current 2.8" firmware.

@@ -28,7 +28,7 @@ understood and continued. It complements `README.md`.
 | Touch INT       | 17                             | |
 | Touch RST       | 18                             | |
 | Battery ADC     | 9                              | `BAT_ADC`, 2:1 divider |
-| SD CS           | 21                             | **disabled in this beta** |
+| SD (SDMMC)      | CLK 38 / CMD 40 / D0 39        | 1-bit SDMMC; `SD_CS`(21) unused |
 | GPS TX / RX     | 43 / 44                        | enabled, unvalidated |
 | NeoPixel        | 42                             | |
 
@@ -37,7 +37,7 @@ TFT color order is BGR with inversion enabled. SPI uses the HSPI port.
 ## Build target
 
 - PlatformIO env: `freenove_fnk01044b_s3`
-- Board profile: `esp32-s3-devkitc-1`, 16 MB flash (`default_16MB.csv`, `qio_qspi`)
+- Board profile: `esp32-s3-devkitc-1`, 16 MB flash (`default_16MB.csv`, `qio_opi`)
 - PSRAM enabled in build flags; `-DARDUINO_USB_MODE=1 -DARDUINO_USB_CDC_ON_BOOT=1`
 - `extra_script.py` copies `User_Setup_maramau_freenove_s3_28.h` and `User_Setup_Select.h`
   into the TFT_eSPI library used by the build.
@@ -56,10 +56,15 @@ TFT color order is BGR with inversion enabled. SPI uses the HSPI port.
 
 ### Fixes
 
-- **Boot hang at "Initializing..."**: on the FNK01044B test unit, `SD.begin()`
-  (`SD_CS=21`, shared SPI with TFT/touch) blocked boot. SD initialization is
-  skipped for `MARAUDER_FREEMOVE_FNK01044B` in `SDInterface::initSD()` (early return).
-  SD support is planned to be re-enabled after confirming the correct wiring/bus sharing.
+- **SD on the FNK01044B is on the SDMMC bus, not SPI.** The card is wired to
+  `CLK=38, CMD=40, D0=39` (1-bit SDMMC); `SD_CS=21` (shared SPI with TFT/touch)
+  is unused. The earlier `SD.begin(21)` blocked boot ("Initializing..." hang).
+  For `MARAUDER_FREEMOVE_FNK01044B`, `SDInterface::initSD()` now uses
+  `SD_MMC.setPins(38, 40, 39); SD_MMC.begin("/sdcard", true)` (the `SD` symbol is
+  `#define`d to `SD_MMC` for this target). **Validated on hardware:** with an SD
+  card inserted, boot no longer prints "Failed to mount SD Card (SDMMC)" and
+  `ls /` lists the card root (including the auto-created `/SCRIPTS` directory),
+  confirming both read and write work.
 - **Battery display**: `BatteryInterface` ADC path now sets `i2c_supported = true`
   so the status bar renders the percentage; `MenuFunctions::battery()` was made
   robust for ADC-derived levels (handles `-1` before first read).
@@ -82,7 +87,6 @@ app together, or flash the merged full image.
 
 ## Known limitations
 
-- SD card disabled in this beta (see above).
 - GPS enabled in config but not validated without an attached module.
 - Battery percentage is a linear estimate from `BAT_ADC` (3.30–4.15 V); can be
   inaccurate under load. TP4054 `CHRG` is not mapped to an ESP32 GPIO, so no
@@ -101,8 +105,6 @@ app together, or flash the merged full image.
 ## TODO / roadmap
 
 - Ports for the Freenove ESP32-S3 Display **3.5"** and **4.0"** variants.
-- Re-enable and validate microSD on FNK01044B.
-- Investigate PSRAM initialization.
 - Validate GPS with an attached module; confirm UART pin mapping.
 - Improve battery reporting (calibration/averaging); add charging indication.
 - General refinement and testing of the 2.8" firmware.

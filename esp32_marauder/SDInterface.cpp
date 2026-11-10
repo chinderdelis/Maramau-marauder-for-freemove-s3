@@ -1,6 +1,15 @@
 #include "SDInterface.h"
 #include "lang_var.h"
 
+// On the Freenove/Freemove FNK01044B the microSD slot is wired to the SDMMC
+// peripheral (1-bit: CLK=38, CMD=40, D0=39), NOT to the SPI bus. We therefore
+// use the SD_MMC library instead of the SPI SD library for this target.
+// Alias the bare `SD` token to `SD_MMC` so the rest of this file (which is
+// written against the SPI `SD` object) keeps working unchanged.
+#ifdef MARAUDER_FREEMOVE_FNK01044B
+  #define SD SD_MMC
+#endif
+
 // GCOVR_EXCL_START -- requires mounted SPIFFS and SD filesystems.
 namespace {
   bool removeTree(fs::FS& fs, const String& path, bool keep_root = false) {
@@ -136,9 +145,20 @@ bool SDInterface::initSD() {
     #endif
 
     #ifdef MARAUDER_FREEMOVE_FNK01044B
-      this->supported = false;
-      return false;
-    #endif
+      // SD card is on the SDMMC bus (1-bit): CLK=38, CMD=40, D0=39.
+      // It is NOT on the SPI bus (SD_CS=21 would target the wrong peripheral),
+      // which previously caused the boot to hang at SD init.
+      SD_MMC.setPins(38, 40, 39);
+      if (!SD_MMC.begin("/sdcard", true)) {
+        Serial.println(F("Failed to mount SD Card (SDMMC)"));
+        this->supported = false;
+        return false;
+      }
+      this->supported = true;
+      this->cardType = SD_MMC.cardType();
+
+      this->cardSizeMB = SD_MMC.cardSize() / (1024 * 1024);
+    #else
 
     pinMode(SD_CS, OUTPUT);
 
@@ -146,12 +166,12 @@ bool SDInterface::initSD() {
     #if (defined(MARAUDER_M5STICKC)) || (defined(HAS_CYD_TOUCH)) || (defined(MARAUDER_CARDPUTER)) || (defined(MARAUDER_CARDPUTER_ADV))
       /* Set up SPI SD Card using external pin header
       StickCPlus Header - SPI SD Card Reader
-                  3v3   -   3v3
-                  GND   -   GND
-                   G0   -   CLK
-              G36/G25   -   MISO
-                  G26   -   MOSI
-                        -   CS (jumper to SD Card GND Pin)
+                   3v3   -   3v3
+                   GND   -   GND
+                    G0   -   CLK
+               G36/G25   -   MISO
+                   G26   -   MOSI
+                         -   CS (jumper to SD Card GND Pin)
       */
       #if defined(MARAUDER_M5STICKC)
         enum { SPI_SCK = 0, SPI_MISO = 36, SPI_MOSI = 26 };
@@ -182,7 +202,9 @@ bool SDInterface::initSD() {
       this->cardType = SD.cardType();
 
       this->cardSizeMB = SD.cardSize() / (1024 * 1024);
-    
+    }
+    #endif
+
       if (this->supported) {
         const int NUM_DIGITS = log10(this->cardSizeMB) + 1;
 
@@ -206,7 +228,6 @@ bool SDInterface::initSD() {
       this->sd_files = new LinkedList<String>();
     
       return true;
-  }
 
   #else
     return false;
